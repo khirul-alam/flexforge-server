@@ -4,16 +4,23 @@ const { connectDB } = require('./src/config/db');
 
 const PORT = process.env.PORT || 5000;
 
-async function startServer() {
-  try {
+let isConnected = false;
+
+async function ensureDBConnected() {
+  if (!isConnected) {
     await connectDB();
-    app.listen(PORT, () => {
-      console.log(`🚀 FlexForge server running on port ${PORT}`);
-    });
-  } catch (error) {
-    console.error('❌ Failed to start server:', error.message);
-    process.exit(1);
+    isConnected = true;
   }
 }
 
-startServer();
+// For Vercel serverless: connect to DB on each cold start
+ensureDBConnected();
+
+// For local development: run a normal listening server
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`🚀 FlexForge server running on port ${PORT}`);
+  });
+}
+
+module.exports = app;
