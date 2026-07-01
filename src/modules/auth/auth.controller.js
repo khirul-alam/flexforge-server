@@ -1,4 +1,4 @@
-const { generateToken, cookieOptions } = require('../../utils/generateToken');
+const { generateToken } = require('../../utils/generateToken');
 const { getDB } = require('../../config/db');
 
 async function issueJWT(req, res, next) {
@@ -13,7 +13,23 @@ async function issueJWT(req, res, next) {
 
     const token = generateToken({ email: user.email, role: user.role });
 
-    res.cookie('token', token, cookieOptions).status(200).json({ success: true, message: 'JWT issued' });
+    // Production: send token in response body
+    // Development: also set cookie
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    if (!isProduction) {
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+      });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'JWT issued',
+      token: token  // send in body for production
+    });
   } catch (error) {
     next(error);
   }
@@ -22,7 +38,7 @@ async function issueJWT(req, res, next) {
 async function logout(req, res, next) {
   try {
     res
-      .clearCookie('token', { ...cookieOptions, maxAge: 0 })
+      .clearCookie('token', { httpOnly: true })
       .status(200)
       .json({ success: true, message: 'Logged out successfully' });
   } catch (error) {
