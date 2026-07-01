@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const { connectDB } = require('./config/db');
 
 const errorHandler = require('./middlewares/errorHandler');
 
@@ -16,6 +17,7 @@ const statsRoutes = require('./modules/stats/stats.route');
 
 const app = express();
 
+// ---------- Core Middlewares ----------
 app.use(
   cors({
     origin: [
@@ -29,10 +31,26 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+// ---------- Connect DB for serverless ----------
+let isConnected = false;
+app.use(async (req, res, next) => {
+  if (!isConnected) {
+    try {
+      await connectDB();
+      isConnected = true;
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Database connection failed' });
+    }
+  }
+  next();
+});
+
+// ---------- Health Check ----------
 app.get('/', (req, res) => {
   res.send('FlexForge server is running ✅');
 });
 
+// ---------- Route Mounting ----------
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/classes', classRoutes);
@@ -43,10 +61,12 @@ app.use('/api/forum', forumRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/stats', statsRoutes);
 
+// ---------- 404 ----------
 app.use('/api', (req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
 
+// ---------- Global Error Handler ----------
 app.use(errorHandler);
 
 module.exports = app;
