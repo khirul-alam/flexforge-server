@@ -35,7 +35,7 @@ https://flexforge-server.vercel.app
 
 ```bash
 npm install
-cp .env.example .env   # fill in your credentials
+cp .env.example .env 
 npm run dev
 ```
 
