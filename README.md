@@ -41,4 +41,4 @@ npm run dev
 
 ## Environment Variables
 
-See `.env.example` for required environment variables.
+`.env.example` 
